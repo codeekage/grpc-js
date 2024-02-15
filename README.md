@@ -44,7 +44,8 @@ const server = new grpc.Server()
 const grpcLoader = new GrpcLoader('user-service') // load grpc controller
 const rpc = grpcLoader.loadRPC({
   controllers: [UserController, ProfileController],
-  middlewares: [KeyExchangeMiddleware],
+  middlewares: [KeyExchangeMiddleware], // before controller execution
+  interceptors: [TransformResponseInterceptor] // after controller execution
 })
 
 server.addService(namespace.com.pkg.user.rpc.service, rpc)
