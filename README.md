@@ -78,7 +78,7 @@ export class UserController {
 
   @validate(UserDTO) // validates a dto
   async login(call: ServerUnaryCall<UserDTO, any>) {
-    return this.userService.add(call.request)
+    return this.userService.login(call.request)
   }
 }
 ```
