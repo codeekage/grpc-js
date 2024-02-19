@@ -1,21 +1,12 @@
-import {
-  ServerUnaryCall,
-  UntypedServiceImplementation,
-  sendUnaryData,
-} from '@grpc/grpc-js'
+import { ServerUnaryCall, UntypedServiceImplementation, sendUnaryData } from '@grpc/grpc-js'
 import { GrpcError } from './errors'
 import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
 
 type GrpcResponseType = Record<any, any>
-type GrpcMiddleware =
-  | Array<(call: ServerUnaryCall<any, any>) => Promise<any>>
-  | any
+type GrpcMiddleware = Array<(call: ServerUnaryCall<any, any>) => Promise<any>> | any
 type GrpcInterceptor = Array<
-  (
-    callRequest: ServerUnaryCall<any, any>,
-    response: GrpcResponseType
-  ) => Promise<any>
+  (callRequest: ServerUnaryCall<any, any>, response: GrpcResponseType) => Promise<any>
 >
 
 interface ServiceControllerOptions {
@@ -30,11 +21,7 @@ export class GrpcLoader {
     this.serviceName = serviceName
   }
 
-  private async execute(
-    functions: any[],
-    call: ServerUnaryCall<any, any>,
-    data = {}
-  ) {
+  private async execute(functions: any[], call: ServerUnaryCall<any, any>, data = {}) {
     if (!functions) throw new GrpcError('Invalid middleware error', 500, 7)
     if (functions.length) {
       for (let index = 0; index < functions.length; index++) {
@@ -48,10 +35,7 @@ export class GrpcLoader {
     return data
   }
 
-  private executeMiddleware(
-    middlewares: GrpcMiddleware,
-    call: ServerUnaryCall<any, any>
-  ) {
+  private executeMiddleware(middlewares: GrpcMiddleware, call: ServerUnaryCall<any, any>) {
     return this.execute(middlewares, call)
   }
 
@@ -76,14 +60,15 @@ export class GrpcLoader {
         respond: sendUnaryData<any>
       ) => {
         try {
-          if (middlewares && middlewares.length)
-            await this.executeMiddleware(middlewares, call)
+          if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
           let data = await controller[functionName](call)
           if (interceptors && interceptors.length) {
             data = await this.executeInterceptors(interceptors, call, data)
           }
+          if (!data.data) data.data = data
           return respond(null, data)
-        } catch (err) {
+        } catch (err: any) {
+          err.error ?? err.name
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
             return respond(err)
           }
@@ -93,6 +78,7 @@ export class GrpcLoader {
               errors: formatValidationErrors(err),
             })
           }
+          if (!err.errors || err.errors.length) err.errors = []
           return respond(null, err)
         }
       }
