@@ -68,12 +68,13 @@ export class GrpcLoader {
           if (!data.data) data.data = data
           return respond(null, data)
         } catch (err: any) {
-          err.error ?? err.name
+          err.error = err.name
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
             return respond(err)
           }
           if (Array.isArray(err) && err?.[0] instanceof ValidationError) {
             return respond(null, {
+              error: 'ValidationError',
               message: 'Validation error',
               errors: formatValidationErrors(err),
             })

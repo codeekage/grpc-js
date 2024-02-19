@@ -1,4 +1,4 @@
-export { validate } from './decorator'
+export { validate, middleware } from './decorator'
 export {
   GrpcError,
   NotFoundError,
