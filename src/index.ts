@@ -6,5 +6,6 @@ export {
   UnauthorizedError,
   InternalServerError,
 } from './errors'
-export { GrpcLoader } from './loader'
+export { GrpcLoader, GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from './loader'
+export { Logger } from './logger'
 

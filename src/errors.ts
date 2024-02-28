@@ -41,4 +41,6 @@ export class InternalServerError extends GrpcError {
     super(message, httpCode, grpcCode)
     this.name = 'InternalServerError'
   }
+
+  test(){}
 }

@@ -2,10 +2,11 @@ import { ServerUnaryCall, UntypedServiceImplementation, sendUnaryData } from '@g
 import { GrpcError } from './errors'
 import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
+import { Logger } from './logger'
 
-type GrpcResponseType = Record<any, any>
-type GrpcMiddleware = Array<(call: ServerUnaryCall<any, any>) => Promise<any>> | any
-type GrpcInterceptor = Array<
+export type GrpcResponseType = Record<any, any>
+export type GrpcMiddleware = Array<(call: ServerUnaryCall<any, any>) => Promise<any>> | any
+export type GrpcInterceptor = Array<
   (callRequest: ServerUnaryCall<any, any>, response: GrpcResponseType) => Promise<any>
 >
 
@@ -17,8 +18,10 @@ interface ServiceControllerOptions {
 
 export class GrpcLoader {
   serviceName: string
+  logger: Logger
   constructor(serviceName: string) {
     this.serviceName = serviceName
+    this.logger = new Logger(this.serviceName)
   }
 
   private async execute(functions: any[], call: ServerUnaryCall<any, any>, data = {}) {
@@ -54,26 +57,41 @@ export class GrpcLoader {
     interceptors?: GrpcInterceptor
   ): UntypedServiceImplementation {
     const convertedProcedures: any = {}
-    Object.entries(controllerPrototype).forEach(([functionName]) => {
+    Object.entries(controllerPrototype).forEach(([functionName], index) => {
+      // cast function name to get
       convertedProcedures[functionName] = async (
         call: ServerUnaryCall<any, any>,
         respond: sendUnaryData<any>
       ) => {
+        const funcName = Object.keys(convertedProcedures)[index]
         try {
           if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
           let data = await controller[functionName](call)
           if (interceptors && interceptors.length) {
             data = await this.executeInterceptors(interceptors, call, data)
           }
+          if (!data) data = {}
           if (!data.data) data.data = data
+
+          this.logger.log(`rpc=${funcName}`, {
+            request: JSON.stringify(call.request),
+            response: JSON.stringify(data),
+          })
           return respond(null, data)
         } catch (err: any) {
+          if (interceptors) {
+            err = await this.executeInterceptors(interceptors, call, err)
+          }
           err.error = err.name
+          this.logger.error(`rpc=${funcName}`, {
+            error: typeof err === 'object' ? JSON.stringify(err) : err,
+          })
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
             return respond(err)
           }
           if (Array.isArray(err) && err?.[0] instanceof ValidationError) {
             return respond(null, {
+              status: "failed",
               error: 'ValidationError',
               message: 'Validation error',
               errors: formatValidationErrors(err),
