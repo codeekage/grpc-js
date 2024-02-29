@@ -1,6 +1,6 @@
 {
   "name": "@codeekage/grpc-js",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "gRPC package",
   "main": "index.js",
   "module": "index",

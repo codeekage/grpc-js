@@ -3,12 +3,8 @@ import { GrpcError } from './errors'
 import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
 import { Logger } from './logger'
+import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
 
-export type GrpcResponseType = Record<any, any>
-export type GrpcMiddleware = Array<(call: ServerUnaryCall<any, any>) => Promise<any>> | any
-export type GrpcInterceptor = Array<
-  (callRequest: ServerUnaryCall<any, any>, response: GrpcResponseType) => Promise<any>
->
 
 interface ServiceControllerOptions {
   controllers: Array<new (...args: any[]) => any>
