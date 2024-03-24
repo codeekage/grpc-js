@@ -1,4 +1,4 @@
-export { validate, middleware } from './decorator'
+export { validate, middleware, IsMongoId } from './decorator'
 export {
   GrpcError,
   NotFoundError,

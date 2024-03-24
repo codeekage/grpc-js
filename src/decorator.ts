@@ -1,4 +1,10 @@
-import { validateOrReject } from 'class-validator'
+import {
+  ValidationOptions,
+  validateOrReject,
+  ValidationArguments,
+  registerDecorator,
+} from 'class-validator'
+import { isValidObjectId } from 'mongoose'
 
 export function validate(object: any) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
@@ -21,5 +27,25 @@ export function middleware(func: Function) {
       return originalMethod.apply(this, args)
     }
     return descriptor
+  }
+}
+
+export function IsMongoId(property?: string, validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isValidBase64',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          return isValidObjectId(value)
+        },
+        defaultMessage(validationArguments) {
+          return `Invalid ${propertyName} id, please check the id and try again`
+        },
+      },
+    })
   }
 }

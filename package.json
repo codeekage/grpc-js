@@ -1,6 +1,6 @@
 {
   "name": "@codeekage/grpc-js",
-  "version": "1.0.22",
+  "version": "1.0.25",
   "description": "gRPC package",
   "main": "index.js",
   "module": "index",
@@ -30,7 +30,8 @@
     "@grpc/reflection": "^1.0.1",
     "class-validator": "^0.14.1",
     "grpc-health-check": "^2.0.1",
-    "logfmt": "^1.4.0"
+    "logfmt": "^1.4.0",
+    "mongoose": "^8.2.0"
   },
   "devDependencies": {
     "@types/logfmt": "^1.2.6"

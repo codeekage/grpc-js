@@ -67,18 +67,18 @@ export class GrpcLoader {
             data = await this.executeInterceptors(interceptors, call, data)
           }
           if (!data) data = {}
-          if (!data.data) data.data = data
-
           this.logger.log(`rpc=${funcName}`, {
             request: JSON.stringify(call.request),
             response: JSON.stringify(data),
           })
-          return respond(null, data)
+          return respond(null, { status: "successful", data })
         } catch (err: any) {
+          console.info(err)
           if (interceptors) {
             err = await this.executeInterceptors(interceptors, call, err)
           }
           err.error = err.name
+          err.status = "failed"
           this.logger.error(`rpc=${funcName}`, {
             error: typeof err === 'object' ? JSON.stringify(err) : err,
           })
