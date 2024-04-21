@@ -4,7 +4,7 @@ import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
 import { Logger } from './logger'
 import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
-
+import Container from 'typedi'
 
 interface ServiceControllerOptions {
   controllers: Array<new (...args: any[]) => any>
@@ -71,15 +71,15 @@ export class GrpcLoader {
             request: JSON.stringify(call.request),
             response: JSON.stringify(data),
           })
-          return respond(null, { status: "successful", data })
+          return respond(null, { status: 'successful', success: true, data, message: data.message })
         } catch (err: any) {
-          console.info(err)
           if (interceptors) {
             err = await this.executeInterceptors(interceptors, call, err)
           }
           err.error = err.name
-          err.status = "failed"
+          err.status = 'failed'
           this.logger.error(`rpc=${funcName}`, {
+            request: JSON.stringify(call.request),
             error: typeof err === 'object' ? JSON.stringify(err) : err,
           })
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
@@ -87,7 +87,8 @@ export class GrpcLoader {
           }
           if (Array.isArray(err) && err?.[0] instanceof ValidationError) {
             return respond(null, {
-              status: "failed",
+              success: false,
+              status: 'failed',
               error: 'ValidationError',
               message: 'Validation error',
               errors: formatValidationErrors(err),
@@ -107,6 +108,21 @@ export class GrpcLoader {
     controllers.forEach((controller) => {
       const convertedProcedures = this.rpcConverter(
         new controller(),
+        controller.prototype,
+        middlewares,
+        interceptors
+      )
+      Object.assign(procedure, convertedProcedures)
+    })
+    return procedure
+  }
+
+  loadController(options: ServiceControllerOptions): UntypedServiceImplementation {
+    const { controllers, middlewares, interceptors } = options
+    const procedure = {}
+    controllers.forEach((controller) => {
+      const convertedProcedures = this.rpcConverter(
+        Container.get<typeof controller>(controller),
         controller.prototype,
         middlewares,
         interceptors
