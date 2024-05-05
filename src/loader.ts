@@ -94,7 +94,7 @@ export class GrpcLoader {
               errors: formatValidationErrors(err),
             })
           }
-          if (!err.errors || err.errors.length) err.errors = []
+          if (!err.errors || !err.errors.length) err.errors = []
           return respond(null, err)
         }
       }

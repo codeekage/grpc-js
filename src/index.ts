@@ -9,3 +9,5 @@ export {
 export { GrpcLoader } from './loader'
 export { GrpcInterceptor, GrpcMiddleware, GrpcResponseType, GrpcPackage } from './interface'
 export { Logger } from './logger'
+export { connection, connection as mongo } from './db/mongo'
+export { queryFilter, RequestFilter } from './db/filter'
