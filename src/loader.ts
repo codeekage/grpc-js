@@ -4,14 +4,9 @@ import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
 // import { Logger } from './logger'
 import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
-import Container, { Inject, Service } from 'typedi'
+import Container from 'typedi'
 import pino from 'pino'
 import { randomUUID } from 'crypto'
-
-
-const logger = pino()
-
-Container.set('logger', logger)
 
 interface ServiceControllerOptions {
   controllers: Array<new (...args: any[]) => any>
@@ -19,12 +14,9 @@ interface ServiceControllerOptions {
   interceptors?: GrpcInterceptor
 }
 
-
-
 export class GrpcLoader {
   serviceName: string
   logger: pino.Logger
-
   constructor(serviceName: string) {
     this.serviceName = serviceName
     //   this.logger = new Logger(this.serviceName)
@@ -70,19 +62,17 @@ export class GrpcLoader {
         respond: sendUnaryData<any>
       ) => {
         const funcName = Object.keys(convertedProcedures)[index]
-
-        const logger = Container.get<pino.Logger>('logger')
-
-        this.logger = logger.child(logger, {
+        this.logger = pino({
+          name: this.serviceName,
           formatters: {
             bindings: (bindings) => {
-              return { name: this.serviceName, rpc: funcName, pid: bindings.pid, host: bindings.hostname, trace: randomUUID(), levels: undefined, values: undefined }
-            },
+              return { service: this.serviceName, pid: bindings.pid, host: bindings.hostname, rpc: funcName, trace: randomUUID(), levels: undefined, values: undefined }
+            }
           },
         })
         try {
-          // call.request.logger = this.logger.child(this.logger)
-          this.logger.info('Incoming Request', { request: { ...call.request, logger: undefined } })
+          call.request.logger = this.logger.child(this.logger)
+          call.request.logger.info('Incoming Request', { request: { ...call.request, logger: undefined } })
           if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
 
           let data = await controller[functionName](call)
@@ -154,7 +144,3 @@ export class GrpcLoader {
     return procedure
   }
 }
-
-
-
-export { Container as GrpcContainer, Inject as GrpcInject, Service as GrpcService }

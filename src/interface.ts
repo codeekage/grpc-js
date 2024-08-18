@@ -11,7 +11,7 @@ export type GrpcMiddleware = Array<(call: ServerUnaryCall<any, any>) => Promise<
 export type GrpcInterceptor = Array<
   (callRequest: ServerUnaryCall<any, any>, response: GrpcResponseType) => Promise<any>
 >
-export type GrpcRequest<T> = { logger: pino.Logger } & T
+export type GrpcRequest<T> = { body: T, logger: pino.Logger }
 
 interface GrpcPack {
   com: {
