@@ -2,9 +2,16 @@ import { ServerUnaryCall, UntypedServiceImplementation, sendUnaryData } from '@g
 import { GrpcError } from './errors'
 import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
-import { Logger } from './logger'
+// import { Logger } from './logger'
 import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
-import Container from 'typedi'
+import Container, { Inject, Service } from 'typedi'
+import pino from 'pino'
+import { randomUUID } from 'crypto'
+
+
+const logger = pino()
+
+Container.set('logger', logger)
 
 interface ServiceControllerOptions {
   controllers: Array<new (...args: any[]) => any>
@@ -12,12 +19,15 @@ interface ServiceControllerOptions {
   interceptors?: GrpcInterceptor
 }
 
+
+
 export class GrpcLoader {
   serviceName: string
-  logger: Logger
+  logger: pino.Logger
+
   constructor(serviceName: string) {
     this.serviceName = serviceName
-    this.logger = new Logger(this.serviceName)
+    //   this.logger = new Logger(this.serviceName)
   }
 
   private async execute(functions: any[], call: ServerUnaryCall<any, any>, data = {}) {
@@ -60,16 +70,29 @@ export class GrpcLoader {
         respond: sendUnaryData<any>
       ) => {
         const funcName = Object.keys(convertedProcedures)[index]
+
+        const logger = Container.get<pino.Logger>('logger')
+
+        this.logger = logger.child(logger, {
+          formatters: {
+            bindings: (bindings) => {
+              return { name: this.serviceName, rpc: funcName, pid: bindings.pid, host: bindings.hostname, trace: randomUUID(), levels: undefined, values: undefined }
+            },
+          },
+        })
         try {
+          // call.request.logger = this.logger.child(this.logger)
+          this.logger.info('Incoming Request', { request: { ...call.request, logger: undefined } })
           if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
+
           let data = await controller[functionName](call)
           if (interceptors && interceptors.length) {
             data = await this.executeInterceptors(interceptors, call, data)
           }
           if (!data) data = {}
-          this.logger.log(`rpc=${funcName}`, {
-            request: JSON.stringify(call.request),
-            response: JSON.stringify(data),
+          this.logger.info({
+            response: data,
+            msg: 'Request completed'
           })
           return respond(null, { status: 'successful', success: true, data, message: data.message })
         } catch (err: any) {
@@ -78,9 +101,8 @@ export class GrpcLoader {
           }
           err.error = err.name
           err.status = 'failed'
-          this.logger.error(`rpc=${funcName}`, {
-            request: JSON.stringify(call.request),
-            error: typeof err === 'object' ? JSON.stringify(err) : err,
+          this.logger.error(err, {
+            request: call.request,
           })
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
             return respond(err)
@@ -132,3 +154,7 @@ export class GrpcLoader {
     return procedure
   }
 }
+
+
+
+export { Container as GrpcContainer, Inject as GrpcInject, Service as GrpcService }
