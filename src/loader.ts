@@ -7,6 +7,7 @@ import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
 import Container from 'typedi'
 import pino from 'pino'
 import { randomUUID } from 'crypto'
+import { createLogger } from './pinoLogger'
 
 interface ServiceControllerOptions {
   controllers: Array<new (...args: any[]) => any>
@@ -62,17 +63,29 @@ export class GrpcLoader {
         respond: sendUnaryData<any>
       ) => {
         const funcName = Object.keys(convertedProcedures)[index]
-        this.logger = pino({
-          name: this.serviceName,
-          formatters: {
-            bindings: (bindings) => {
-              return { service: this.serviceName, pid: bindings.pid, host: bindings.hostname, rpc: funcName, trace: randomUUID(), levels: undefined, values: undefined }
-            }
-          },
+
+        const parentLogger = createLogger({
+          name: this.serviceName
         })
+
+        this.logger = parentLogger.child(parentLogger, {
+          formatters: {
+            bindings: (bindings) => ({
+              service: this.serviceName,
+              pid: bindings.pid,
+              host: bindings.hostname,
+              rpc: funcName,
+              trace: randomUUID(),
+              levels: undefined, values: undefined
+            })
+          }
+        })
+
+        call.request.body = call.request
         try {
-          call.request.logger = this.logger.child(this.logger)
-          call.request.logger.info('Incoming Request', { request: { ...call.request, logger: undefined } })
+          call.request.logger = this.logger
+
+          this.logger.info({ request: call.request.body }, 'Incoming Request')
           if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
 
           let data = await controller[functionName](call)
@@ -92,7 +105,7 @@ export class GrpcLoader {
           err.error = err.name
           err.status = 'failed'
           this.logger.error(err, {
-            request: call.request,
+            request: call.request.body,
           })
           if (err instanceof GrpcError && err?.grpcCode !== 0) {
             return respond(err)

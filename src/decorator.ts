@@ -19,11 +19,13 @@ export function validate(object: any) {
   }
 }
 
-export function middleware(func: Function) {
+export function middleware(...funcs: Function[]) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor!.value
     descriptor!.value = async function (...args: any[]) {
-      await func(args[0])
+      for (const func of funcs) {
+        await func(args[0])
+      }
       return originalMethod.apply(this, args)
     }
     return descriptor

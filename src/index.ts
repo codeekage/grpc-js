@@ -11,3 +11,4 @@ export { GrpcInterceptor, GrpcMiddleware, GrpcResponseType, GrpcPackage, GrpcReq
 export { Logger } from './logger'
 export { connection, connection as mongo } from './db/mongo'
 export { queryFilter, RequestFilter } from './db/filter'
+export { createLogger } from './pinoLogger'
