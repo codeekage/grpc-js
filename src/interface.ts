@@ -14,7 +14,18 @@ export type GrpcInterceptor = Array<
 
 export type GrpcLogger = pino.Logger
 
-export type GrpcRequest<T> = { body: T, logger: GrpcLogger }
+export type GrpcRequest<T> = {
+  readonly body?: T;
+  readonly logger?: GrpcLogger;
+  readonly getContext?: GrpcRequestContext;
+} & T
+
+export type GrpcRequestContext = {
+  service: string
+  rpc: string
+  trace: string
+  request: Record<string, unknown>
+} & Record<string, unknown>
 
 interface GrpcPack {
   com: {

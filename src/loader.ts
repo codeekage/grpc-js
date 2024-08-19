@@ -3,8 +3,8 @@ import { GrpcError } from './errors'
 import { formatValidationErrors } from './util'
 import { ValidationError } from 'class-validator'
 // import { Logger } from './logger'
-import { GrpcInterceptor, GrpcMiddleware, GrpcResponseType } from 'interface'
-import Container from 'typedi'
+import { GrpcInterceptor, GrpcMiddleware, GrpcRequestContext, GrpcResponseType } from 'interface'
+import Container, { Service, Inject } from 'typedi'
 import pino from 'pino'
 import { randomUUID } from 'crypto'
 import { createLogger } from './pinoLogger'
@@ -64,6 +64,15 @@ export class GrpcLoader {
       ) => {
         const funcName = Object.keys(convertedProcedures)[index]
 
+        const trace = randomUUID()
+
+        Container.set('request-context', {
+          service: this.serviceName,
+          rpc: funcName,
+          trace,
+          request: call.request,
+        })
+
         const parentLogger = createLogger({
           name: this.serviceName
         })
@@ -75,7 +84,7 @@ export class GrpcLoader {
               pid: bindings.pid,
               host: bindings.hostname,
               rpc: funcName,
-              trace: randomUUID(),
+              trace,
               levels: undefined, values: undefined
             })
           }
@@ -84,6 +93,8 @@ export class GrpcLoader {
         call.request.body = call.request
         try {
           call.request.logger = this.logger
+          call.request.getContext = Container.get<GrpcRequestContext>('request-context')
+
 
           this.logger.info({ request: call.request.body }, 'Incoming Request')
           if (middlewares && middlewares.length) await this.executeMiddleware(middlewares, call)
@@ -157,3 +168,7 @@ export class GrpcLoader {
     return procedure
   }
 }
+
+Container.set('logger-context', createLogger({}))
+
+export { Container as GrpcContainer, Inject as GrpcContainerInject, Service as GrpcContainerService }
