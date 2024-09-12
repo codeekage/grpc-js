@@ -1,6 +1,6 @@
 import { ServerUnaryCall, UntypedServiceImplementation, sendUnaryData } from '@grpc/grpc-js'
 import { GrpcError } from './errors'
-import { formatValidationErrors } from './util'
+import { formatValidationErrors, setFieldToNewField } from './util'
 import { ValidationError } from 'class-validator'
 // import { Logger } from './logger'
 import { GrpcInterceptor, GrpcMiddleware, GrpcRequestContext, GrpcResponseType } from 'interface'
@@ -108,7 +108,7 @@ export class GrpcLoader {
             response: data,
             msg: 'Request completed'
           })
-          return respond(null, { status: 'successful', success: true, data, message: data.message })
+          return respond(null, { status: 'successful', success: true, data: setFieldToNewField(data, '_id', 'id'), message: data.message })
         } catch (err: any) {
           if (interceptors) {
             err = await this.executeInterceptors(interceptors, call, err)
