@@ -1,9 +1,9 @@
 {
   "name": "@codeekage/grpc-js",
-  "version": "1.0.57",
+  "version": "1.0.58",
   "description": "gRPC package",
   "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "types": "lib/types",
   "module": "index",
   "engines": {
     "node": "^20"
