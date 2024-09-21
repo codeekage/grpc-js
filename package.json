@@ -1,9 +1,9 @@
 {
   "name": "@codeekage/grpc-js",
-  "version": "1.0.58",
+  "version": "1.0.70",
   "description": "gRPC package",
-  "main": "lib/index.js",
-  "types": "lib/types",
+  "main": "index.js",
+  "types": "types",
   "module": "index",
   "engines": {
     "node": "^20"
@@ -13,7 +13,7 @@
     "url": "https://github.com/codeekage/grpc-js.git"
   },
   "scripts": {
-    "build": "rm -rf lib/ && tsc -p tsconfig.json && cp package.json .npmrc lib && cd lib",
+    "build": "rm -rf lib/ && tsc -p tsconfig.json && cp package.json lib && cd lib",
     "lint": "eslint --fix ./src/**/*.ts",
     "test": "mocha --require ts-node/register --timeout 0 --ui bdd src/**/*.spec.ts",
     "dev:publish": "npm run build && npm pack && npm link"

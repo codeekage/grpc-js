@@ -36,7 +36,7 @@ export function setFieldToNewField<T extends Record<string, any>>(obj: T, x: str
     while (stack.length) {
       const { current } = stack.pop()!
 
-      if (typeof current === 'object' && current !== null) {
+      if (current && typeof current === 'object' && current !== null) {
         if (seenObjects.has(current)) {
           // Skip circular references
           continue
@@ -51,7 +51,7 @@ export function setFieldToNewField<T extends Record<string, any>>(obj: T, x: str
         } else {
           // Handle object properties
           for (const prop in current) {
-            if (current.hasOwnProperty(prop)) {
+            if (current?.hasOwnProperty && current.hasOwnProperty(prop)) {
               stack.push({ current: current[prop], parent: current, key: prop })
 
               // Set 'y' field if 'x' field is found
