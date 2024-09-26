@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "commonjs", 
     "outDir": "lib",
-    "declarationDir": "./lib/types", 
+    "declarationDir": "./lib/types",
     "declaration": true,                            /* Generates corresponding '.d.ts' file. */
     "removeComments": true,                         /* Do not emit comments to output. */
     "strict": true,                                 /* Enable all strict type-checking options. */

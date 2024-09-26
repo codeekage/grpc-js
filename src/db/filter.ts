@@ -3,10 +3,23 @@ export interface RequestFilter {
   to?: Date
   limit?: number
   page?: number
+  skip?: number
 }
 
-export function queryFilter<T>(filter: RequestFilter, args: Record<string, any> = {}) {
-  const { from, to } = filter
+type PaginationResponse<T> = {
+  page: number
+  limit: number
+  skip: number
+  query: T
+}
+
+function getPagination<T extends RequestFilter>(page: number, limit: number, query: T): PaginationResponse<T> {
+  const skip = (page - 1) * limit
+  return { page, limit, skip, query }
+}
+
+export function queryFilter<T extends RequestFilter>(filter: RequestFilter, args: Record<string, any> = {}) {
+  const { from, to, page = 1, limit = 10 } = filter
   const query: any = {}
 
   for (const key in args) {
@@ -22,5 +35,5 @@ export function queryFilter<T>(filter: RequestFilter, args: Record<string, any> 
     if (to) query.createdAt.$lt = new Date(to) // Todo: handle date
   }
 
-  return query as T
+  return getPagination<T>(page, limit, query)
 }

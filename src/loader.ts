@@ -170,8 +170,11 @@ export class GrpcLoader {
   }
 
   loadRPC(options: ServiceControllerOptions): UntypedServiceImplementation {
-    const { controllers, middlewares, interceptors } = options
+    const { controllers, middlewares, interceptors, eventHandler } = options
     const procedure = {}
+
+    if (eventHandler) Container.set('eventHandler', eventHandler)
+
     controllers.forEach((controller) => {
       const convertedProcedures = this.rpcConverter(
         new controller(),
